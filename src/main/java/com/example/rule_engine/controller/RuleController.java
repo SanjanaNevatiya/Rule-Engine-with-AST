@@ -38,9 +38,20 @@ public class RuleController {
 
     @PostMapping("/create")
     public ResponseEntity<String> createRule(@RequestBody CreateRuleRequest createRuleRequest) {
+        // Ensure ruleString is not null or empty
+        if (createRuleRequest == null || createRuleRequest.ruleString == null || createRuleRequest.ruleString.trim().isEmpty()) {
+            return ResponseEntity.badRequest().body("Rule string cannot be null or empty");
+        }
+
         String ruleString = createRuleRequest.ruleString; // Get the ruleString from the request body
 
-        Node ast = ruleParser.parseRule(ruleString);
+        Node ast;
+        try {
+            ast = ruleParser.parseRule(ruleString); // Try parsing the rule string
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.badRequest().body("Invalid rule: " + e.getMessage());
+        }
+
         ObjectMapper objectMapper = new ObjectMapper();
         String astJson;
         try {
@@ -57,6 +68,7 @@ public class RuleController {
 
         return ResponseEntity.status(HttpStatus.CREATED).body("Rule created with ID: " + ruleEntity.getId());
     }
+
 
     @PostMapping("/evaluate")
     public ResponseEntity<Boolean> evaluateRule(@RequestBody Map<String, Object> request) {
